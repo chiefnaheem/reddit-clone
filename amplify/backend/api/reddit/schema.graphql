@@ -1,0 +1,91 @@
+# This "input" configures a global authorization rule to enable public access to
+# all models in this schema. Learn more about authorization rules here: https://docs.amplify.aws/cli/graphql/authorization-rules
+# input AMPLIFY { globalAuthRule: AuthRule = { allow: public } } # FOR TESTING ONLY!
+
+# type Post
+#   @model
+#   owner can perform every operation on their own posts while other signed in users can only read and guests can also read
+#   @auth(rules: [{allow: owner, operations: [read, update, create, delete]}])
+#   @auth(rules: [{allow: private, operations: [read]}])
+#   @auth(rules: [{allow: public, operations: [read]}])
+#   # @auth(
+#   #   rules: [
+#   #     { allow: owner }
+#   #     { allow: private, operations: [read] }
+#   #     { allow: public, operations: [read] }
+#   #   ]
+#   # ) {
+#     {
+#   id: ID!
+#   title: String!
+#   comments: [Comment] @oneToMany (keyName: "byPost", fields: ["id"])
+# }
+
+# type Comment
+#   @model
+#   @key (name: "byPost", fields: ["postID", "content"])
+#   @auth(rules: [{allow: owner, operations: [read, update, create, delete]}])
+#   @auth(rules: [{allow: private, operations: [read]}])
+#   @auth(rules: [{allow: public, operations: [read]}])
+
+#   # postID: ID! @primaryKey @index(name: "byPost", sortKeyFields: ["content"])
+#   # @auth(rules: [{ allow: private, operations: [read] }])
+#   # @auth(rules: [{ allow: public, operations: [read] }])
+#   {
+#   id: ID!
+#   postID: ID!
+#   post: Post @ManyToOne (fields: ["postID"])
+#   content: String!
+# }
+
+type Post
+  @model
+  @auth(
+    rules: [
+      # Owner can perform any action on their own Post
+      { allow: owner, operations: [create, update, delete, read] }
+      # Other signed in users can read everyones posts
+      { allow: private, operations: [read] }
+      # Non-signed in users (guests) can read everyones posts as well.
+      { allow: public, operations: [read] }
+    ]
+  ) {
+  id: ID!
+  title: String!
+  contents: String!
+  image: String
+  votes: [Vote!]! @connection(keyName: "byVote", fields: ["id"])
+  comments: [Comment] @connection(keyName: "byPost", fields: ["id"])
+}
+
+type Comment
+  @model
+  @key(name: "byPost", fields: ["postID", "content"])
+  @auth(
+    rules: [
+      { allow: owner, operations: [create, update, delete, read] }
+      { allow: private, operations: [read] }
+      { allow: public, operations: [read] }
+    ]
+  ) {
+  id: ID!
+  postID: ID!
+  post: Post @connection(fields: ["postID"])
+  content: String!
+}
+
+type Vote
+  @model
+  @key(name: "byVote", fields: ["postID", "vote"])
+  @auth(
+    rules: [
+      { allow: owner, operations: [create, update, delete, read] }
+      { allow: private, operations: [read] }
+      { allow: public, operations: [read] }
+    ]
+  ) {
+  id: ID!
+  vote: String!
+  postID: ID!
+  post: Post @connection(fields: ["postID"])
+}
